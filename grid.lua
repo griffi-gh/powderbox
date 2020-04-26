@@ -65,6 +65,27 @@ function grid.new(w,h) --создать новую сетку сшириной w
     end
   end
   
+  function ret:flow(x,y,xv,yv,max)
+    xv=math.max(math.min(xv,1),-1)
+    yv=math.max(math.min(yv,1),-1)
+    local retx,rety,reti,test
+    for i=1,max do
+      local potx,poty = x+(i*xv),y+(i*yv)
+      if self:get(potx,poty)==grid.nul then
+        retx,rety,reti=potx,poty,i
+        test=true
+      else 
+        break
+      end
+    end
+    if test then
+      self:move(x,y,retx,rety)
+      return retx,rety,reti
+    else
+      return x,y,nil
+    end
+  end
+  
   setmetatable(ret.grid,{ --задаем стандартное значение таблицы (метатаблица)
       __index = function() return grid.invalid end 
   })

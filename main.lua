@@ -1,20 +1,38 @@
-
-local timestep=1 --increases speed on powerful cpu's (default:1)
-local revupd=false --update top2bottom (enable update_protect) (default:false)
-local update_protect=false --prevents object from updating twice (glitchy) (default:false)
+local revupd=false --update top2bottom (glitchy) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
 local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:600,400)
 local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window size (false can be faster) (default:true)
+local enableVsync=true -- (default:true) - 60/30 fps lock
+local enableTempSim=true -- (default:true) - experimental
+local forceProtection=false -- (default:false) - experimental (glitchy)
 
 rand = love.math.random
 grid = require'grid'
 require'elem'
 local elem=elem
+local moonshine = require 'moonshine' --TODO POST-PROCESSING
 
 local function noopfn() end
 
 local selected=1
 local brushSize=3
+
+function outlText(text,x,y,c1,c2) --говнокод, но работакт
+  local g=love.graphics
+  g.push()
+  c1=c1 or {1,1,1,1}
+  c2=c2 or {1-c1[1],1-c1[2],1-c1[3],c1[4]}
+  c1[4]=c1[4] or 1
+  c2[4]=c2[4] or 1
+  g.setColor(unpack(c2))
+  g.print(text,x+1,y+1)
+  g.print(text,x-1,y-1)
+  g.print(text,x+1,y-1)
+  g.print(text,x-1,y+1)
+  g.setColor(unpack(c1))
+  g.print(text,x,y)
+  g.pop()
+end
 
 function particle(elem,x,y,t)
   local p={}
@@ -22,7 +40,7 @@ function particle(elem,x,y,t)
     p=t
   end
   p.elem=elem
-  p.uid=rand(9999999999999)
+  p.temp=0
   sim:set(x,y,p)
   return p
 end
@@ -30,7 +48,7 @@ end
 function love.load(arg)
   if gridResF==1 then doUpscale=false end
   pause=false
-  love.window.setMode(resx,resy,{vsync=1})
+  love.window.setMode(resx,resy,{vsync=enableVsync})
   w,h = love.graphics.getWidth(),love.graphics.getHeight()
   sim = grid.new(w/(1/gridResF),h/(1/gridResF))
   rw,rh=1,1
@@ -44,23 +62,68 @@ end
 function love.draw() 
   local g = love.graphics
   local sim=sim
+  local grid=grid
+  local protected={}
+  
+  local fa,fb,fc=sim.h,1,-1
+  if revupd then
+    fa,fb,fc=1,sim.h,1
+  end
   for i=1,sim.w do
-    for j=1,sim.h do
+    for j=fa,fb,fc do
       local obj = sim:get(i,j)
-      if obj ~= grid.nul then
+      if not(obj == grid.nul) then 
+        
         local col=obj.color or obj.elem.color
-        g.setColor(col[1] or 1,col[2] or 1,col[3] or 1,col[4] or 1)
+        local heatV=(obj.temp/100)/2
+        g.setColor((col[1] or 1)+heatV,(col[2] or 1)-heatV,(col[3] or 1)-heatV,col[4] or 1)
+        
         if doUpscale then
           g.rectangle('fill',i*rw,j*rh,rw,rh)
         else
           g.points(i+0.1,j) 
         end
-      end
+        
+        if not pause then
+          
+          if enableTempSim then
+            local n=sim:neighbors(i,j)
+            local totalHeat=0
+            local heatSrc=0
+            for i,v in ipairs(n) do
+              if not(v==grid.nul) then
+                heatSrc=heatSrc+1
+                totalHeat=totalHeat+v.temp
+              end
+            end
+            if heatSrc>0 then
+              local avg=totalHeat/heatSrc
+              if obj.temp>avg-1 then
+                for i,v in ipairs(n) do
+                  if not(v==grid.nul) then
+                    v.temp=avg
+                  end
+                end
+              else
+                obj.temp=avg
+              end
+            end
+          end
+        
+          local toRun = obj.update or obj.elem.update
+          if toRun and not(protected[obj]) then
+            if obj.protect or obj.elem.protect or forceProtection then
+              protected[obj]=true
+            end 
+            toRun(sim,i,j)
+          end
+        end
+      end 
     end
   end
   g.setColor(1,1,1,1)
   g.print(string.format(
-    ' %s FPS grid size: %sX%s RAM:%s kb \n %s (use 1-%s keys)',
+    '%s FPS, grid size: %sX%s RAM:%s kb \n %s (use 1-%s keys)',
     love.timer.getFPS(),sim.w,sim.h,math.floor(collectgarbage('count')),selector[selected],#selector)
   )
   if not(doUpscale) then
@@ -68,7 +131,18 @@ function love.draw()
     g.rectangle('line',1,1,sim.w*rw,sim.h*rh)
   end
   g.setColor(1,1,1)
-  g.rectangle('line',0+mx-brushSize/rw2,3+my-brushSize/rh2,brushSize/rw2*2,brushSize/rh2*2)
+  g.rectangle('line',mx-brushSize/rw2,my-brushSize/rh2,brushSize/rw2*2+2,brushSize/rh2*2+2)
+  
+  if not(hover==grid.nul) then
+    local info=(hover.name or hover.elem.name or '???')..'\nx='..wmx..' y='..wmy..'\n'
+    for i,v in pairs(hover) do
+      if not(type(v)=='table') then
+        info=info..i..'='..v..'\n'
+      end
+    end
+    local c=hover.color or hover.elem.color or {1,1,1}
+    outlText(info,mx+brushSize+12,my-brushSize,c,{0,0,0})
+  end
 end
 
 function love.update(dt)
@@ -78,9 +152,14 @@ function love.update(dt)
   local lm=love.mouse
   m1,m2=lm.isDown(1),lm.isDown(2)
   mx,my=lm.getX(),lm.getY()
+  if love.keyboard.isDown('s') then
+    mx=math.floor(mx/brushSize)*brushSize+brushSize/2
+    my=math.floor(my/brushSize)*brushSize+brushSize/2
+  end
   wmx,wmy=math.floor(mx/rw),math.floor(my/rw)
   
-  if m1 or m2 then
+  
+  --if m1 or m2 then
     for i=0,brushSize do
       for j=0,brushSize do
         local psx,psy=wmx+i-math.floor(brushSize/2),wmy+j-math.floor(brushSize/2)
@@ -91,32 +170,17 @@ function love.update(dt)
         elseif m2 then
           sim:set(psx,psy,grid.nul)
         end
-      end
-    end
-  end
-  
-  local updated={}
-  if not pause then
-    for _=1,timestep do
-      for i=1,sim.w do
-        local fa,fb,fc=sim.h,1,-1
-        if revupd then
-          fa,fb,fc=1,sim.h,1
-        end
-        for j=fa,fb,fc do
-          local obj = sim:get(i,j)
-          if obj ~= grid.nul then
-            if not(update_protect) or not(updated[obj.uid]) then
-              if update_protect then
-                updated[obj.uid]=true
-              end
-              (obj.update or obj.elem.update or noopfn)(sim,i,j)
-            end
+        if love.keyboard.isDown('h') then
+          local obj=sim:get(psx,psy)
+          if not(obj==grid.nul) then
+            obj.temp=obj.temp+0.15
           end
         end
       end
     end
-  end
+  --end
+  
+  hover=sim:get(wmx,wmy)
 end
 
 function love.wheelmoved(x,y)
@@ -132,27 +196,3 @@ function love.keypressed(k)
     selected=ton
   end
 end
-
---[[
-elseif mode==2 then
-      for _=1,timestep do
-        if not (updj and updi) then updi,updj=1,sim.h end
-        updj=updj-1
-        if updj<1 then
-          updj=sim.h
-          updi=updi+1
-        end
-        if updi>sim.w then
-          updi,updj=1,sim.h
-        end
-        updloop(updi,updj)
-      end
-    end
-  end
-  
-  if y~=0 then
-    selected=selected+math.floor(math.max(-1,math.min(1,y)))
-    if selected<1 then selected=#selector end
-  if selected>#selector then selected=1 end
-  end
-]]
