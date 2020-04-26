@@ -1,7 +1,7 @@
 local fastSand=true
-local waterSpeed=3 
+local waterSpeed=3  --resolution and speed 
 
-selector={'sand','caus','water','virus','wall'}
+selector={'sand','caus','water','virus','wall','colorwall'}
 
 elem = {
     sand={
@@ -79,6 +79,30 @@ elem = {
               end
             end
           end
+        end
+      end
+    },
+    colorwall={
+      color={1,1,1,1},
+      update = function(t,x,y) 
+        local me=t:get(x,y)
+        local neigh=t:neighbors(x,y)
+        local r,g,b=0,0,0
+        local c=0
+        for i,v in ipairs(neigh) do
+          if v~=grid.nul then
+            local colh=v.color or v.elem.color
+            if colh then
+              c=c+1
+              r=r+colh[1]
+              g=g+colh[2]
+              b=b+colh[3]
+            end
+          end
+        end
+        local cc=1/c
+        if c>0 then
+          me.color={r*cc,g*cc,b*cc}
         end
       end
     }

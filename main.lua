@@ -2,8 +2,8 @@ local timestep=1 --increases speed on powerful cpu's (default:1)
 local revupd=false --update top2bottom (enable update_protect) (default:false)
 local update_protect=false --prevents object from updating twice (glitchy) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
-local resx,resy=800,600 --game resolution (0,0 for fullscreen) (default:800,600)
-local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window size (default:true)
+local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:800,600)
+local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window size (false can be faster) (default:true)
 
 rand = love.math.random
 grid = require'grid'
@@ -13,6 +13,7 @@ local elem=elem
 local function noopfn() end
 
 local selected=1
+local brushSize=3
 
 function particle(elem,x,y,t)
   local p={}
@@ -32,8 +33,10 @@ function love.load(arg)
   w,h = love.graphics.getWidth(),love.graphics.getHeight()
   sim = grid.new(w/(1/gridResF),h/(1/gridResF))
   rw,rh=1,1
+  rw2,rh2=w/sim.w,h/sim.h
   if doUpscale then
-    rw,rh=w/sim.w,h/sim.h
+    rw,rh=rw2,rh2
+    rw2,rh2=1,1
   end
 end
 
@@ -56,22 +59,30 @@ function love.draw()
   end
   g.setColor(1,1,1,1)
   g.print(string.format(
-    ' %s FPS grid size: %sX%s RAM:%s kb \n %s',
-    love.timer.getFPS(),sim.w,sim.h,math.floor(collectgarbage('count')),selector[selected])
+    ' %s FPS grid size: %sX%s RAM:%s kb \n %s (use 1-%s keys)',
+    love.timer.getFPS(),sim.w,sim.h,math.floor(collectgarbage('count')),selector[selected],#selector)
   )
   if not(doUpscale) then
     g.setColor(1,0,0)
     g.rectangle('line',1,1,sim.w*rw,sim.h*rh)
   end
+  g.setColor(1,1,1)
+  g.rectangle('line',0+mx-brushSize/rw2,3+my-brushSize/rh2,brushSize/rw2*2,brushSize/rh2*2)
 end
 
 function love.update(dt)
+  if selected<1 then selected=1 end
+  if selected>#selector then selected=#selector end
+    
   local lm=love.mouse
   m1,m2=lm.isDown(1),lm.isDown(2)
+  mx,my=lm.getX(),lm.getY()
+  wmx,wmy=math.floor(mx/rw),math.floor(my/rw)
+  
   if m1 or m2 then
-    for i=0,3 do
-      for j=0,3 do
-        local psx,psy=math.floor(lm.getX()/rw)+i,math.floor(lm.getY()/rh)+j
+    for i=0,brushSize do
+      for j=0,brushSize do
+        local psx,psy=wmx+i-math.floor(brushSize/2),wmy+j-math.floor(brushSize/2)
         if m1 then
           if sim:get(psx,psy)==grid.nul then
             particle(elem[selector[selected]],psx,psy)
@@ -108,14 +119,16 @@ function love.update(dt)
 end
 
 function love.wheelmoved(x,y)
-  selected=selected+math.max(-1,math.min(1,y))
-  if selected<1 then selected=#selector end
-  if selected>#selector then selected=1 end
+  brushSize=math.min(math.max(brushSize+y,1),sim.h/2)
 end
 
 function love.keypressed(k)
+  local ton = tonumber(k)
   if k=='space' then 
     pause=not(pause) 
+  end
+  if ton then
+    selected=ton
   end
 end
 
@@ -134,5 +147,11 @@ elseif mode==2 then
         updloop(updi,updj)
       end
     end
+  end
+  
+  if y~=0 then
+    selected=selected+math.floor(math.max(-1,math.min(1,y)))
+    if selected<1 then selected=#selector end
+  if selected>#selector then selected=1 end
   end
 ]]
