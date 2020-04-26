@@ -1,8 +1,9 @@
+
 local timestep=1 --increases speed on powerful cpu's (default:1)
 local revupd=false --update top2bottom (enable update_protect) (default:false)
 local update_protect=false --prevents object from updating twice (glitchy) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
-local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:800,600)
+local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:600,400)
 local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window size (false can be faster) (default:true)
 
 rand = love.math.random

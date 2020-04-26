@@ -1,3 +1,4 @@
+
 local fastSand=true
 local waterSpeed=3  --resolution and speed 
 
