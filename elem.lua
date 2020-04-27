@@ -7,7 +7,7 @@ local waterStyle=true --random water color
 
 
 
-selector={'wall','sand','water','virus','caus','clne','colorwall'}
+selector={'wall','sand','water','virus','caus','clne','fire','colorwall'}
 
 
 local liqDraw=function(i,j,obj,sim,rw,rh)
@@ -76,9 +76,11 @@ elem = {
         for i=-1,1 do
           for j=-1,1 do
             if not(j==0 and i==0) then
-              if t:get(x+i,y+j) then
+              local tobj=t:get(x+i,y+j)
+              if tobj and tobj.elem~=elem.virus then
                 if rand(30)==1 then
-                  particle(elem.virus,x+i,y+j)
+                  local d={ctype=tobj.elem,cname=tobj.elem.name}
+                  particle(elem.virus,x+i,y+j,d)
                 end
               end
             end
@@ -152,6 +154,28 @@ elem = {
           end
         end
         o.secret.time=(o.secret.time or 0)+1
+      end
+    },
+    fire={
+      protect=true,
+      name='fire',
+      color={0.88,0.34,0.13},
+      setup=function(t,x,y,o)
+        o.secret.maxlife=14
+        o.life=rand(o.secret.maxlife/2,o.secret.maxlife)
+      end,
+      update=function(t,x,y,o)
+        o.color=o.color or o.elem.color
+        o.color[1]=o.elem.color[1]/(o.life/o.secret.maxlife)
+        o.life=o.life-1
+        if o.life>0 then
+          t:flow(x,y,0,-1,gravity)
+        else
+          t:set(x,y,grid.nul)
+        end
+      end,
+      draw=function(i,j,obj,sim,rw,rh)
+        love.graphics.rectangle('fill',i,j-rh,rw,rh*3)
       end
     }
   }

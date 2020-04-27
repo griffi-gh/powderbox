@@ -1,10 +1,10 @@
-local revupd=false --update top2bottom (glitchy) (default:false)
+local revupd=false --update top2bottom (glitchy) (forceProtection must be enabled) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
 local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:600,400)
 local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window size (false can be faster) (default:true)
 local enableVsync=true -- (default:true) - 60/30 fps lock
 local enableTempSim=true -- (default:true) - experimental
-local forceProtection=false -- (default:false) - experimental (glitchy)
+local forceProtection=true-- (default:true) - experimental
 
 rand = love.math.random
 grid = require'grid'
@@ -117,7 +117,13 @@ function love.draw()
               end
             end
           end
-        
+          
+          local objload = obj.setup or obj.elem.setup
+          if objload and not(obj.secret.loaded) then
+            obj.secret.loaded=true
+            objload(sim,i,j,obj)
+          end
+          
           local toRun = obj.update or obj.elem.update
           if toRun and not(protected[obj]) then
             if obj.protect or obj.elem.protect or forceProtection then
@@ -126,11 +132,6 @@ function love.draw()
             toRun(sim,i,j,obj)
           end
           
-          local objload = obj.setup or obj.elem.setup
-          if objload and not(obj.secret.loaded) then
-            obj.secret.loaded=true
-            objload(sim,i,j,obj)
-          end
         end
       end 
     end
