@@ -5,6 +5,7 @@ local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window siz
 local enableVsync=true -- (default:true) - 60/30 fps lock
 local enableTempSim=true -- (default:true) - experimental
 local forceProtection=true-- (default:true) - experimental
+local fullheat=200
 
 rand = love.math.random
 grid = require'grid'
@@ -77,7 +78,13 @@ function love.draw()
       if not(obj == grid.nul) then 
         
         local col=obj.color or obj.elem.color
-        local heatV=(obj.temp/100)/2
+        local heatV
+        if obj.elem.nocolorheat or obj.nocolorheat then
+          heatV=0
+        else
+          heatV=(obj.temp/fullheat)/2
+        end
+        
         local fincol={(col[1] or 1)+heatV,(col[2] or 1)-heatV,(col[3] or 1)-heatV,col[4] or 1}
         g.setColor(fincol)
         

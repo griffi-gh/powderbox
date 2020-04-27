@@ -158,15 +158,17 @@ elem = {
     },
     fire={
       protect=true,
+      nocolorheat=true,
       name='fire',
       color={0.88,0.34,0.13},
       setup=function(t,x,y,o)
         o.secret.maxlife=14
         o.life=rand(o.secret.maxlife/2,o.secret.maxlife)
+        o.temp=125
       end,
       update=function(t,x,y,o)
-        o.color=o.color or o.elem.color
-        o.color[1]=o.elem.color[1]/(o.life/o.secret.maxlife)
+        o.color=o.color or {unpack(o.elem.color)}
+        o.color[1]=o.elem.color[1]*(o.life/o.secret.maxlife)+0.5
         o.life=o.life-1
         if o.life>0 then
           t:flow(x,y,0,-1,gravity)
@@ -176,6 +178,14 @@ elem = {
       end,
       draw=function(i,j,obj,sim,rw,rh)
         love.graphics.rectangle('fill',i,j-rh,rw,rh*3)
+      end
+    },
+    steam={
+      name='steam',
+      setup=function(t,x,y,o)
+        o.temp=10
+      end,
+      update=function(t,x,y,o)
       end
     }
   }
