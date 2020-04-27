@@ -1,3 +1,5 @@
+version=6
+
 local revupd=false --update top2bottom (glitchy) (forceProtection must be enabled) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
 local resx,resy=600,400 --game resolution (0,0 for fullscreen) (default:600,400)
@@ -7,9 +9,11 @@ local enableTempSim=true -- (default:true) - experimental
 local forceProtection=true-- (default:true) - experimental
 local fullheat=200
 
+
 rand = love.math.random
 grid = require'grid'
 require'elem'
+require'save'
 local elem=elem
 
 local function noopfn() end
@@ -49,6 +53,7 @@ function particle(elem,x,y,t)
 end
 
 function love.load(arg)
+  love.window.setTitle('powderbox v'..version)
   if gridResF==1 then doUpscale=false end
   pause=false
   love.window.setMode(resx,resy,{vsync=enableVsync})
@@ -156,7 +161,7 @@ function love.draw()
   g.rectangle('line',mx-brushSize/rw2,my-brushSize/rh2,brushSize/rw2*2+2,brushSize/rh2*2+2)
   
   if not(hover==grid.nul) then
-    local info=(hover.name or hover.elem.name or '???')..'\nx='..wmx..' y='..wmy..'\n'
+    local info=(hover.name or hover.elem.name or '???!bug!???')..'\nx='..wmx..' y='..wmy..'\n'
     for i,v in pairs(hover) do
       if not(type(v)=='table') then
         info=info..i..'='..v..'\n'
@@ -164,6 +169,15 @@ function love.draw()
     end
     local c=hover.elem.color or {1,1,1}
     outlText(info,mx+brushSize+12,my-brushSize,c,{0,0,0})
+  end
+  if LOAD_WARN then 
+    g.push() g.setColor(1,0,0) 
+    local scale=0.7
+    g.scale(scale,scale)
+    g.print(
+      'You used save loading. It is an experimental feature and can cause bugs, crashes or FPS drops.',
+      1,h/scale-18
+    ) g.pop()
   end
 end
 
@@ -174,7 +188,7 @@ function love.update(dt)
   local lm=love.mouse
   m1,m2=lm.isDown(1),lm.isDown(2)
   mx,my=lm.getX(),lm.getY()
-  if love.keyboard.isDown('s') then
+  if love.keyboard.isDown('lalt') then
     mx=math.floor(mx/brushSize)*brushSize+brushSize/2
     my=math.floor(my/brushSize)*brushSize+brushSize/2
   end
@@ -201,7 +215,6 @@ function love.update(dt)
       end
     end
   --end
-  
   hover=sim:get(wmx,wmy)
 end
 
@@ -213,6 +226,16 @@ function love.keypressed(k)
   local ton = tonumber(k)
   if k=='space' then 
     pause=not(pause) 
+  end
+  if k=='r' then
+    love.event.quit('restart')
+  end
+  if k=='k' then 
+    simsave(nil,sim)
+  end
+  if k=='l' then 
+    sim=simload(nil,sim)
+    LOAD_WARN=true
   end
   if ton then
     selected=ton
