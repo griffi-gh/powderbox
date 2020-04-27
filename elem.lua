@@ -7,7 +7,7 @@ local waterStyle=true --random water color
 
 
 
-selector={'wall','sand','water','virus','caus','clne','fire','colorwall'}
+selector={'wall','sand','water','virus','caus','clne','fire','colorwall','steam'}
 
 
 local liqDraw=function(i,j,obj,sim,rw,rh)
@@ -38,7 +38,14 @@ elem = {
       name='water',
       gtype='LIQ',
       color={0.1,0.1,1,0.5},
-      update = function(t,x,y)--water 2.0
+      update = function(t,x,y,o)--water 2.0
+        if o.temp>100 then
+          particle(elem.steam,x,y)
+          t:get(x,y).ctype=elem.water
+          t:get(x,y).cname='water'
+          t:get(x,y).temp=o.temp-1
+          return
+        end
         local nx,ny,i=t:flow(x,y,0,1,gravity)
         if not(i) then
           if rand(2)==1 then
@@ -90,6 +97,7 @@ elem = {
     },
     colorwall={
       name='colorwall',
+      gtype='STA',
       color={1,1,1,1},
       update = function(t,x,y) 
         local me=t:get(x,y)
@@ -120,6 +128,7 @@ elem = {
     },
     clne={
       name='clne',
+      gtype='STA',
       color={1,0,1,1},
       setup=function(t,x,y,o)
         o.ctype=nil
@@ -159,12 +168,13 @@ elem = {
     fire={
       protect=true,
       nocolorheat=true,
+      gtype='FIRE',
       name='fire',
       color={0.88,0.34,0.13},
       setup=function(t,x,y,o)
         o.secret.maxlife=14
         o.life=rand(o.secret.maxlife/2,o.secret.maxlife)
-        o.temp=125
+        o.temp=150
       end,
       update=function(t,x,y,o)
         o.color=o.color or {unpack(o.elem.color)}
@@ -181,12 +191,51 @@ elem = {
       end
     },
     steam={
+      protect=true,
+      gtype='GAS',
+      color={1,1,1,0.5},
       name='steam',
+      nocolorheat=true,
       setup=function(t,x,y,o)
-        o.temp=10
+        o.color={unpack(o.elem.color)}
+        if o.temp==0 then
+          o.temp=120
+        end
+        o.secret.maxlife=rand(150,350)
+        o.life=o.secret.maxlife
+        o.ctype=o.ctype or elem.water
+        o.cname=o.cname or 'water'
       end,
       update=function(t,x,y,o)
-      end
+        o.color[4]=math.min(0.5,o.life/o.secret.maxlife/2)
+        if o.temp<75 then
+          if o.ctype then
+            if rand(2)==1 then
+              particle(o.ctype,x,y)
+              return
+            else
+              o.life=o.life/2
+            end
+          end
+        end
+        o.life=o.life-1
+        if o.life<1 then
+          t:set(x,y,grid.nul)
+          return
+        end
+        local x,y,i=t:flow(x,y,0,-1,1)
+        if not i then
+          if t:get(x,y-1).elem.gtype=='LIQ' then
+            t:swap(x,y,x,y-1)
+          else
+            local fx,fy,i=t:flow(x,y,1,-1,1)
+            if not i then
+              t:flow(x,y,-1,-1,1)
+            end
+          end
+        end
+      end,
+      draw=liqDraw
     }
   }
   

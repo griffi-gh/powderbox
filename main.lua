@@ -195,7 +195,7 @@ function love.update(dt)
         if love.keyboard.isDown('h') then
           local obj=sim:get(psx,psy)
           if not(obj==grid.nul) then
-            obj.temp=obj.temp+0.15
+            obj.temp=obj.temp+1
           end
         end
       end

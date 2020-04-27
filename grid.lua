@@ -85,6 +85,13 @@ function grid.new(w,h) --создать новую сетку сшириной w
     end
   end
   
+  function ret:swap(x1,y1,x2,y2)
+    local a = self:get(x1,y1)
+    local b = self:get(x2,y2)
+    self:set(x1,y1,b)
+    self:set(x2,y2,a)
+  end
+  
   function ret:flow(x,y,xv,yv,max)
     xv=math.max(math.min(xv,1),-1)
     yv=math.max(math.min(yv,1),-1)
