@@ -10,7 +10,6 @@ rand = love.math.random
 grid = require'grid'
 require'elem'
 local elem=elem
-local moonshine = require 'moonshine' --TODO POST-PROCESSING
 
 local function noopfn() end
 
@@ -78,10 +77,19 @@ function love.draw()
         local heatV=(obj.temp/100)/2
         g.setColor((col[1] or 1)+heatV,(col[2] or 1)-heatV,(col[3] or 1)-heatV,col[4] or 1)
         
+        local shader=obj.shader or obj.elem.shader
+        if shader then
+          love.graphics.setShader(shader)
+        end
+        
         if doUpscale then
-          g.rectangle('fill',i*rw,j*rh,rw,rh)
+          love.graphics.rectangle('fill',i*rw,j*rh,rw,rh)
         else
-          g.points(i+0.1,j) 
+          love.graphics.points(i+0.1,j) 
+        end
+        
+        if shader then
+          love.graphics.setShader()
         end
         
         if not pause then
