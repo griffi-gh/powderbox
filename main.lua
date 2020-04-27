@@ -40,7 +40,10 @@ function particle(elem,x,y,t)
   end
   p.elem=elem
   p.temp=0
-  sim:set(x,y,p)
+  p.secret={}
+  if x and y then
+    sim:set(x,y,p)
+  end
   return p
 end
 
@@ -75,21 +78,18 @@ function love.draw()
         
         local col=obj.color or obj.elem.color
         local heatV=(obj.temp/100)/2
-        g.setColor((col[1] or 1)+heatV,(col[2] or 1)-heatV,(col[3] or 1)-heatV,col[4] or 1)
+        local fincol={(col[1] or 1)+heatV,(col[2] or 1)-heatV,(col[3] or 1)-heatV,col[4] or 1}
+        g.setColor(fincol)
         
-        local shader=obj.shader or obj.elem.shader
-        if shader then
-          love.graphics.setShader(shader)
-        end
-        
-        if doUpscale then
-          love.graphics.rectangle('fill',i*rw,j*rh,rw,rh)
+        local drawfn=obj.draw or obj.elem.draw
+        if not drawfn then
+          if doUpscale then
+            love.graphics.rectangle('fill',i*rw,j*rh,rw,rh)
+          else
+            love.graphics.points(i+0.1,j) 
+          end
         else
-          love.graphics.points(i+0.1,j) 
-        end
-        
-        if shader then
-          love.graphics.setShader()
+          drawfn(i*rw,j*rh,sim,obj,rw,rh)
         end
         
         if not pause then
@@ -123,7 +123,13 @@ function love.draw()
             if obj.protect or obj.elem.protect or forceProtection then
               protected[obj]=true
             end 
-            toRun(sim,i,j)
+            toRun(sim,i,j,obj)
+          end
+          
+          local objload = obj.setup or obj.elem.setup
+          if objload and not(obj.secret.loaded) then
+            obj.secret.loaded=true
+            objload(sim,i,j,obj)
           end
         end
       end 
@@ -148,7 +154,7 @@ function love.draw()
         info=info..i..'='..v..'\n'
       end
     end
-    local c=hover.color or hover.elem.color or {1,1,1}
+    local c=hover.elem.color or {1,1,1}
     outlText(info,mx+brushSize+12,my-brushSize,c,{0,0,0})
   end
 end

@@ -1,12 +1,18 @@
-
---local fastSand=true--can decrease fps old!!!  old!!!
---local waterSpeed=4  --resolution and speed (fps---)  old!!!  old!!!
---local sandIt=4  old!!!
-local sandChk=4
-local waterChk=4
 local gravity=4
 
-selector={'wall','sand','water','virus','caus','colorwall'}
+local sandChk=3
+
+local waterChk=6
+local waterStyle=true --random water color
+
+
+
+selector={'wall','sand','water','virus','caus','clne','colorwall'}
+
+
+local liqDraw=function(i,j,obj,sim,rw,rh)
+        love.graphics.circle('fill',i,j,(rw+rh)/2+1)
+      end
 
 elem = {
     sand={
@@ -31,7 +37,7 @@ elem = {
     water={ 
       name='water',
       gtype='LIQ',
-      color={0.1,0.1,1},
+      color={0.1,0.1,1,0.5},
       update = function(t,x,y)--water 2.0
         local nx,ny,i=t:flow(x,y,0,1,gravity)
         if not(i) then
@@ -42,6 +48,14 @@ elem = {
           end
         end
       end,
+      draw=liqDraw,
+      setup=function(t,x,y,o)
+        if waterStyle then
+          o.color={unpack(o.elem.color)}
+          local toadd = (rand()/10)
+          o.color={o.color[1]-toadd,o.color[2]-toadd,o.color[3]+toadd,o.color[4]}
+        end
+      end
     },
     caus={
       name='caus',
@@ -100,6 +114,44 @@ elem = {
             math.min(b*cc,lim)
           }
         end
+      end
+    },
+    clne={
+      name='clne',
+      color={1,0,1,1},
+      setup=function(t,x,y,o)
+        o.ctype=nil
+        o.delay=15
+        o.secret.time=0
+      end,
+      update=function(t,x,y,o)
+        if o.ctype then
+          local c=o.ctype.color
+          o.color={c[1]/2,c[2]/2,c[3]/2}
+        end
+        for i,v in ipairs(t:neighbors(x,y,0))do
+          if v==0 then
+            if o.ctype then
+              if (o.secret.time or 0)>(o.delay or 1) then
+                local npx,npy=t:getNeighborXY(x,y,i)
+                particle(o.ctype,npx,npy)
+                o.secret.time=0
+              end
+            end
+          else
+            if not(v.elem==elem.clne) then
+              if not(o.ctype) --[[or o.ctype~=v.elem]] then
+                o.ctype=v.elem
+                o.cname=o.ctype.name
+                break
+              end
+            elseif o.ctype then
+              v.ctype=o.ctype
+              v.cname=o.ctype.name
+            end
+          end
+        end
+        o.secret.time=(o.secret.time or 0)+1
       end
     }
   }
@@ -175,3 +227,7 @@ elem = {
           t:move(x,y,x,y+drs)
           return
         end]]
+        
+        --local fastSand=true--can decrease fps old!!!  old!!!
+--local waterSpeed=4  --resolution and speed (fps---)  old!!!  old!!!
+--local sandIt=4  old!!!

@@ -1,8 +1,8 @@
 
 local grid={}
 
-grid.nul=nil --значение пустых клеток (по умолч)
-grid.invalid='invalid' --значение неверных клеток
+grid.nul=nil -- (не менять для powderbox) >:( --значение пустых клеток (по умолч)
+grid.invalid='__invalid__' --значение неверных клеток
 
 function grid.new(w,h) --создать новую сетку сшириной w и высотой h
   local ret = {}
@@ -42,19 +42,39 @@ function grid.new(w,h) --создать новую сетку сшириной w
     end
   end
   
-  function ret:neighbors(x,y,r) --Получить "соседей" клетки
+  function ret:getNeighborXY(x,y,n)
+    if n==1 then
+      return x-1, y-1
+    elseif n==2 then
+      return x  , y-1
+    elseif n==3 then
+      return x+1, y-1
+    elseif n==4 then 
+      return x+1, y  
+    elseif n==5 then 
+      return x+1, y+1
+    elseif n==6 then
+      return x  , y+1
+    elseif n==7 then  
+      return x-1, y+1
+    elseif n==8 then  
+      return x-1, y  
+    end
+  end
+  
+  function ret:neighbors(x,y,n) --Получить "соседей" клетки
     --[1][2][3]
     --[8][ ][4]
     --[7][6][5]
     return{
-      self:get(x-1, y-1) ,
-      self:get(x  , y-1) ,
-      self:get(x+1, y-1) ,
-      self:get(x+1, y  ) ,
-      self:get(x+1, y+1) ,
-      self:get(x  , y+1) ,
-      self:get(x-1, y+1) ,
-      self:get(x-1, y  )
+      self:get(x-1, y-1) or n,
+      self:get(x  , y-1) or n,
+      self:get(x+1, y-1) or n,
+      self:get(x+1, y  ) or n,
+      self:get(x+1, y+1) or n,
+      self:get(x  , y+1) or n,
+      self:get(x-1, y+1) or n,
+      self:get(x-1, y  ) or n,
     }
   end
   
