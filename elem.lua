@@ -14,6 +14,18 @@ local liqDraw=function(i,j,obj,sim,rw,rh)
         love.graphics.circle('fill',i,j,(rw+rh)/2+1)
       end
 
+local liqUpd=function(t,x,y,o)
+    local nx,ny,i=t:flow(x,y,0,1,gravity)
+    if not(i) then
+      if rand(2)==1 then
+        nx,ny=t:flow(x,y,-1,0,waterChk)
+      else
+        nx,ny=t:flow(x,y,1,0,waterChk)
+      end
+    end
+    return nx,ny
+end
+
 elem = {
     sand={
       name='sand',
@@ -46,14 +58,7 @@ elem = {
           t:get(x,y).temp=o.temp-1
           return
         end
-        local nx,ny,i=t:flow(x,y,0,1,gravity)
-        if not(i) then
-          if rand(2)==1 then
-            x,y=t:flow(x,y,-1,0,waterChk)
-          else
-            x,y=t:flow(x,y,1,0,waterChk)
-          end
-        end
+        liqUpd(t,x,y,o)
       end,
       draw=liqDraw,
       setup=function(t,x,y,o)
@@ -172,7 +177,7 @@ elem = {
       name='fire',
       color={0.88,0.34,0.13},
       setup=function(t,x,y,o)
-        o.secret.maxlife=14
+        o.secret.maxlife=16
         o.life=rand(o.secret.maxlife/2,o.secret.maxlife)
         o.temp=150
       end,

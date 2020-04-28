@@ -27,12 +27,23 @@ function simload(file,simo) --v2
             v.elem=nil
             v.elem=el
           end
+          if v.ctype then
+            local replace=elem[v.ctype.name]
+            if elem[v.cname] then
+              replace=elem[v.cname]
+            end
+            if replace then
+              v.ctype=replace
+            end
+          end
         end
       end
     end
     d=nil
     lgr=nil
     f:close()
+    collectgarbage('collect')
+    collectgarbage('step',1)
     return simu
   end
   return simo

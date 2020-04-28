@@ -96,13 +96,15 @@ function grid.new(w,h) --создать новую сетку сшириной w
     xv=math.max(math.min(xv,1),-1)
     yv=math.max(math.min(yv,1),-1)
     local retx,rety,reti,test
-    for i=1,max do
-      local potx,poty = x+(i*xv),y+(i*yv)
-      if self:get(potx,poty)==grid.nul then
-        retx,rety,reti=potx,poty,i
-        test=true
-      else 
-        break
+    if max then
+      for i=1,max do
+        local potx,poty = x+(i*xv),y+(i*yv)
+        if self:get(potx,poty)==grid.nul then
+          retx,rety,reti=potx,poty,i
+          test=true
+        else 
+          break
+        end
       end
     end
     if test then
