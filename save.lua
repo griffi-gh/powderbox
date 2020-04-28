@@ -42,8 +42,8 @@ function simload(file,simo) --v2
     d=nil
     lgr=nil
     f:close()
-    collectgarbage('collect')
-    collectgarbage('step',1)
+    collectgarbage()
+    collectgarbage()
     return simu
   end
   return simo
