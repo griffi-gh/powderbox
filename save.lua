@@ -2,11 +2,14 @@ local elem=elem
 local grid=grid
 local binser=require'lib.binser'
 
+local function gc() collectgarbage() collectgarbage() end
+
 function simsave(file,simu)
   file=file or 'save.bin'
   local f=io.open(file,'wb')
   f:write(binser.s(simu.grid))
   f:close()
+  gc()
 end
 
 function simload(file,simo) --v2
@@ -42,8 +45,7 @@ function simload(file,simo) --v2
     d=nil
     lgr=nil
     f:close()
-    collectgarbage()
-    collectgarbage()
+    gc()
     return simu
   end
   return simo

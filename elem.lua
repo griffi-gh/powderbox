@@ -1,11 +1,10 @@
 local gravity=4
 
-local sandChk=3
+local sandChk=2 --for all poders
+local sandpw=true  --for all poders
 
-local waterChk=6
+local waterChk=10 --for all liquids
 local waterStyle=true --random water color
-
-
 
 selector={'wall','sand','water','virus','caus','clne','fire','colorwall','steam'}
 
@@ -26,19 +25,39 @@ local liqUpd=function(t,x,y,o)
     return nx,ny
 end
 
+local function powUpd(t,x,y,o)
+  local nx,ny,i=t:flow(x,y,0,1,gravity)
+  if not(i) then
+    local x2,y2,i2=t:flow(x,y,-1,1,sandChk)
+    if not(i2) then
+      local x3,y3,i3=t:flow(x,y,1,1,sandChk)
+      if not(i3) and sandpw then
+        if t:get(x,y+1).elem.gtype=='LIQ' then 
+          t:swap(x,y,x,y+1)
+          return x,y+1
+        elseif t:get(x-1,y+1).elem.gtype=='LIQ' then 
+          t:swap(x,y,x-1,y+1)
+          return x-1,y+1
+        elseif t:get(x+1,y+1).elem.gtype=='LIQ' then 
+          t:swap(x,y,x+1,y+1)
+          return x+1,y+1
+        end
+      else
+        return x3,y3
+      end
+    else
+      return x2,y2
+    end
+  else 
+    return nx,ny
+  end
+end
+
 elem = {
     sand={
       name='sand',
       gtype='POW',
-      update = function(t,x,y) --sand 3.0
-        local nx,ny,i=t:flow(x,y,0,1,gravity)
-        if not(i) then
-          x,y,i=t:flow(x,y,-1,1,sandChk)
-          if not(i) then
-            x,y=t:flow(x,y,1,1,sandChk)
-          end
-        end
-      end,
+      update = powUpd,
       color={1,1,0.2}
     },
     wall={
@@ -52,10 +71,7 @@ elem = {
       color={0.1,0.1,1,0.5},
       update = function(t,x,y,o)--water 2.0
         if o.temp>100 then
-          particle(elem.steam,x,y)
-          t:get(x,y).ctype=elem.water
-          t:get(x,y).cname='water'
-          t:get(x,y).temp=o.temp-1
+          particle(elem.steam,x,y,{ctype=elem.water,cname='water',temp=o.temp-1})
           return
         end
         liqUpd(t,x,y,o)
@@ -132,6 +148,7 @@ elem = {
       end
     },
     clne={
+      nocolorheat=true,
       name='clne',
       gtype='STA',
       color={1,0,1,1},
