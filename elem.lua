@@ -3,7 +3,7 @@ local gravity=4
 local sandChk=2 --for all poders
 local sandpw=true  --for all poders
 
-local waterChk=10 --for all liquids
+local waterChk=4 --for all liquids
 local waterStyle=true --random water color
 
 selector={'wall','sand','water','virus','caus','clne','fire','colorwall','steam'}
@@ -16,6 +16,24 @@ local liqDraw=function(i,j,obj,sim,rw,rh)
 local liqUpd=function(t,x,y,o)
     local nx,ny,i=t:flow(x,y,0,1,gravity)
     if not(i) then
+      --local way=(math.floor(rand())-0.5)*2
+      for tx=-1,1 do
+        for ty=0,1 do
+          if not(tx==0 and ty==1)then
+            if t:get(tx,ty)==grid.nul then
+              t:flow(x,y,tx,ty,waterChk)
+              break
+            end
+          end
+        end
+      end
+    end
+    return nx,ny
+end
+
+--[[
+local nx,ny,i=t:flow(x,y,0,1,gravity)
+    if not(i) then
       if rand(2)==1 then
         nx,ny=t:flow(x,y,-1,0,waterChk)
       else
@@ -23,7 +41,21 @@ local liqUpd=function(t,x,y,o)
       end
     end
     return nx,ny
-end
+]]
+--[[
+local nx,ny,i=t:flow(x,y,0,1,gravity)
+    if not(i) then
+      for tx=-1,1 do
+        for ty=1,0,-1 do
+          if not(tx==0 and ty==1)then
+            if t:get(tx,ty)==grid.nul then
+              t:flow(x,y,tx,ty,waterChk)
+            end
+          end
+        end
+      end
+    end
+    return nx,ny]]
 
 local function powUpd(t,x,y,o)
   local nx,ny,i=t:flow(x,y,0,1,gravity)

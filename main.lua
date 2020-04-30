@@ -1,4 +1,4 @@
-version=7
+version=8
 
 local revupd=false --update top2bottom (glitchy) (forceProtection must be enabled) (default:false)
 local gridResF=0.5 --grid resolution multiplier (1 will disable doUpsale) (default:0.5)
@@ -7,8 +7,8 @@ local doUpscale=true --upscale/downscale grid (NOT resolution) to fit window siz
 local enableVsync=true -- (default:true) - 60/30 fps lock
 local enableTempSim=true -- (default:true) - experimental
 local forceProtection=true-- (default:true) - experimental
-local fullheat=200
-local edgemode=1 --(default:0) 0-void 1-solid
+local fullheat=200 --(default:200)
+local edgemode=0 --(default:0) 0-void 1-solid
 
 
 rand = love.math.random
@@ -17,7 +17,7 @@ require'elem'
 require'save'
 local elem=elem
 
-local function noopfn() end
+--local function noopfn() end
 
 local selected=1
 local brushSize=3

@@ -92,11 +92,15 @@ function grid.new(w,h) --создать новую сетку сшириной w
     self:set(x2,y2,a)
   end
   
-  function ret:flow(x,y,xv,yv,max)
+  function ret:flow(x,y,xv,yv,max,fullchk)
     xv=math.max(math.min(xv,1),-1)
     yv=math.max(math.min(yv,1),-1)
     local retx,rety,reti,test
-    if max then
+    local stop
+    if not(fullchk) then
+      local stop=(self:get(x,y,x+xv,y+yv)~=grid.nul)
+    end
+    if max and not(stop) then
       for i=1,max do
         local potx,poty = x+(i*xv),y+(i*yv)
         if self:get(potx,poty)==grid.nul then
